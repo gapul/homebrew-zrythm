@@ -1,0 +1,54 @@
+name: Update Cask
+
+on:
+  schedule:
+    - cron: "0 6 * * *"  # 毎日 JST 15:00 に実行
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get latest release
+        id: release
+        run: |
+          LATEST=$(curl -s https://api.github.com/repos/zrythm/zrythm/releases/latest)
+          VERSION=$(echo "$LATEST" | jq -r '.tag_name' | sed 's/^v//')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+          ZIP_URL="https://github.com/zrythm/zrythm/releases/download/v${VERSION}/zrythm-trial-${VERSION}-osx-installer.zip"
+          echo "zip_url=$ZIP_URL" >> "$GITHUB_OUTPUT"
+
+          SHA=$(curl -sL "$ZIP_URL" | sha256sum | awk '{print $1}')
+          echo "sha256=$SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Check if update needed
+        id: check
+        run: |
+          CURRENT=$(grep 'version "' Casks/zrythm.rb | grep -o '"[^"]*"' | tr -d '"')
+          echo "current=$CURRENT" >> "$GITHUB_OUTPUT"
+          if [ "$CURRENT" = "${{ steps.release.outputs.version }}" ]; then
+            echo "needs_update=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "needs_update=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Update cask
+        if: steps.check.outputs.needs_update == 'true'
+        run: |
+          VERSION="${{ steps.release.outputs.version }}"
+          SHA="${{ steps.release.outputs.sha256 }}"
+
+          sed -i "s|version \".*\"|version \"$VERSION\"|" Casks/zrythm.rb
+          sed -i "s|sha256 \".*\"|sha256 \"$SHA\"|" Casks/zrythm.rb
+
+      - name: Commit and push
+        if: steps.check.outputs.needs_update == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Casks/zrythm.rb
+          git commit -m "Update zrythm to ${{ steps.release.outputs.version }}"
+          git push
