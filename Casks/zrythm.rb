@@ -7,7 +7,7 @@ cask "zrythm" do
   desc "Highly automated and intuitive digital audio workstation (trial)"
   homepage "https://www.zrythm.org/"
 
-  depends_on macos: ">= :monterey"
+  depends_on macos: :monterey
 
   pkg "zrythm-trial-#{version}-osx-installer/Zrythm-macos-installer-x64-#{version}.pkg"
 
