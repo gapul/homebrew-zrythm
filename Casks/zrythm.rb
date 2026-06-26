@@ -2,12 +2,13 @@ cask "zrythm" do
   version "1.0.0"
   sha256 "aec9033676968eb8081d176dfabe2bcb112e317e62acc41a0504e1c24480c885"
 
-  url "https://github.com/zrythm/zrythm/releases/download/v#{version}/zrythm-trial-#{version}-osx-installer.zip"
+  url "https://github.com/zrythm/zrythm/releases/download/v#{version}/zrythm-trial-#{version}-osx-installer.zip",
+      verified: "github.com/zrythm/zrythm/"
   name "Zrythm"
   desc "Highly automated and intuitive digital audio workstation (trial)"
   homepage "https://www.zrythm.org/"
 
-  depends_on macos: ">= :monterey"
+  depends_on macos: :monterey
 
   pkg "zrythm-trial-#{version}-osx-installer/Zrythm-macos-installer-x64-#{version}.pkg"
 
